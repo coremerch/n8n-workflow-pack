@@ -1,0 +1,249 @@
+{
+  "name": "PRODUCT: Instant Lead Responder",
+  "nodes": [
+    {
+      "id": "d-sticky",
+      "name": "📌 What it does (PRODUCT you sell)\n\nA client's website form POSTs here → lead is stored in Supabase → AI drafts a friendly instant reply (with one qualifying question) → email sent → owner gets a Telegram ping.\n\nWire the form: POST to https://YOUR-APP.onrender.com/webhook/new-lead with JSON { name, email, service, message }.\n⚠️ On Render free tier the first request cold-starts (~30-60s) — keep the cron-job.org ping alive, or upgrade to Starter once the client pays.",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -280
+      ],
+      "parameters": {
+        "height": 400,
+        "width": 380,
+        "color": 6
+      }
+    },
+    {
+      "id": "d-webhook",
+      "name": "Form POST /new-lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-lead",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "d-set",
+      "name": "Normalize Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "name",
+              "value": "={{ $json.body.name || 'there' }}",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "d3",
+              "name": "service",
+              "value": "={{ $json.body.service || 'general enquiry' }}",
+              "type": "string"
+            },
+            {
+              "id": "d4",
+              "name": "message",
+              "value": "={{ $json.body.message || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d-save",
+      "name": "Save Lead (Supabase)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO lead_intake (payload) VALUES ($1::jsonb);",
+        "options": {
+          "queryReplacement": "={{ JSON.stringify($json) }}"
+        }
+      }
+    },
+    {
+      "id": "d-openai",
+      "name": "Draft Reply (OpenAI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer PASTE_YOUR_OPENAI_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.7, max_tokens: 140, messages: [ { role: 'system', content: 'You write short, warm instant-reply emails for a small business responding to a new website lead. Thank them, confirm a human will follow up within one business day, and ask ONE qualifying question related to their request. Max 80 words. Plain text. Sign off with just the business first name placeholder \"— The Team\".' }, { role: 'user', content: JSON.stringify($json) } ] }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "d-build",
+      "name": "Build Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const lead = $('Normalize Lead').item.json;\nlet reply = '';\ntry { reply = $json.choices[0].message.content.trim(); } catch (e) {}\nif (!reply) reply = 'Hi ' + lead.name + ', thanks for reaching out about ' + lead.service + '! We have your request and a real human will get back to you within one business day.\\n\\n— The Team';\nreturn { json: Object.assign({}, lead, {\n  subject: 'Got your ' + lead.service + ' request — we are on it!',\n  body: reply,\n}) };"
+      }
+    },
+    {
+      "id": "d-send",
+      "name": "Instant Auto-Reply",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "fromEmail": "HELLO@CLIENTDOMAIN.COM",
+        "sendTo": "={{ $('Normalize Lead').item.json.email }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "d-telegram",
+      "name": "Alert Owner 📲",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "chatId": "CLIENTS_TELEGRAM_CHAT_ID",
+        "text": "=🚨 New lead just landed!\nName: {{ $('Normalize Lead').item.json.name }}\nEmail: {{ $('Normalize Lead').item.json.email }}\nService: {{ $('Normalize Lead').item.json.service }}\nMessage: {{ $('Normalize Lead').item.json.message }}",
+        "additionalFields": {}
+      }
+    }
+  ],
+  "connections": {
+    "Form POST /new-lead": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead": {
+      "main": [
+        [
+          {
+            "node": "Save Lead (Supabase)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Lead (Supabase)": {
+      "main": [
+        [
+          {
+            "node": "Draft Reply (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Reply (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Build Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email": {
+      "main": [
+        [
+          {
+            "node": "Instant Auto-Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instant Auto-Reply": {
+      "main": [
+        [
+          {
+            "node": "Alert Owner 📲",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Harare"
+  },
+  "pinData": {}
+}

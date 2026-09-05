@@ -1,0 +1,265 @@
+{
+  "name": "Inbound Radar — Get Chased Engine",
+  "nodes": [
+    {
+      "id": "sticky",
+      "name": "📌 READ ME — Inbound Radar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        -240
+      ],
+      "parameters": {
+        "content": "## 📌 Inbound Radar — 'get-chased' engine\nPolls r/n8n (via PullPush) + the official n8n forum every 30 min, matches question titles against your keyword list, dedupes across runs, and drops a Discord digest of questions you can answer **with your commons artifacts**.\n\nSetup (2 min):\n1. Discord → your server → channel ⚙️ → Integrations → Webhooks → **New Webhook** → Copy URL\n2. Paste the URL into the **Ping Me 📬** node's `url` field\n3. Activate. Answer help-first; the README link does the pitching.\n\nIf PullPush 403s/429s from your server IP: the forum node alone still works, or swap the Reddit URL for an RSS.app feed of r/n8n.",
+        "height": 420,
+        "width": 380,
+        "color": 5
+      }
+    },
+    {
+      "id": "cron",
+      "name": "Every 30 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/30 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reddit",
+      "name": "Pull Reddit (r/n8n)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.pullpush.io/reddit/search/submission/?subreddit=n8n&sort=desc&size=25",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "inbound-radar/1.0 (personal answer engine)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "forum",
+      "name": "Pull Forum (Discourse)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://community.n8n.io/latest.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "inbound-radar/1.0 (personal answer engine)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "match",
+      "name": "Match & Dedupe",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Keywords a question must contain to count as \"inbound you can help with\".\n// Tune freely — this is the whole config.\nconst KEYWORDS = [\n  'zapier', 'make.com', 'alternativ', 'invoice', 'reminder', 'follow up', 'follow-up',\n  'scrap', 'cold email', 'lead gen', 'leads', 'code node', 'self-host', 'self host',\n  'selfhost', 'supabase', 'webhook', 'google sheet', 'openai', 'telegram', 'gmail', 'smtp', 'crm',\n];\n\n// Persistent seen-set across executions (survives restarts while workflow is active)\nconst sd = $getWorkflowStaticData('global');\nsd.seen = sd.seen || {};\nconst seen = sd.seen;\n\nconst matches = [];\nconst add = (id, source, title, url, extra) => {\n  if (!id || seen[id]) return;\n  const t = String(title || '').toLowerCase();\n  const hit = KEYWORDS.find(k => t.includes(k));\n  if (!hit) return;\n  seen[id] = 1;\n  matches.push({ json: { id, source, title, url, matched: hit, extra: String(extra || '').slice(0, 140) } });\n};\n\n// Reddit via PullPush (datacenter-friendly). Node may error-continue with {error}.\nfor (const it of $('Pull Reddit (r/n8n)').all()) {\n  const p = it.json && it.json.data ? it.json.data : null;\n  if (!p) continue;\n  add('r_' + p.id, 'r/n8n', p.title, 'https://www.reddit.com' + (p.permalink || ''), p.selftext);\n}\n\n// Official n8n community forum (Discourse /latest.json)\nfor (const it of $('Pull Forum (Discourse)').all()) {\n  const topics = it.json && it.json.topic_list ? it.json.topic_list.topics || [] : [];\n  for (const tp of topics) {\n    if (tp.pinned) continue;\n    add('f_' + tp.id, 'n8n forum', tp.title, 'https://community.n8n.io/t/' + tp.slug + '/' + tp.id);\n  }\n}\n\n// Keep the seen-set bounded\nif (Object.keys(seen).length > 2000) sd.seen = {};\n\nreturn matches;"
+      }
+    },
+    {
+      "id": "digest",
+      "name": "Build Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const all = items.map(i => i.json);\nif (!all.length) return [{ json: { count: 0, digest: '' } }];\nconst lines = all.map(m => '• [' + m.source + '] ' + m.title + '\\n  ' + m.url + (m.extra ? '\\n  \"' + m.extra + '…\"' : ''));\nreturn [{ json: {\n  count: all.length,\n  digest: '📬 ' + all.length + ' question(s) you can answer today:\\n\\n' + lines.join('\\n\\n') + '\\n\\nAnswer with the artifact link. Help first — the link does the pitching.',\n} }];"
+      }
+    },
+    {
+      "id": "if",
+      "name": "New Matches?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "tg",
+      "name": "Ping Me 📬",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        -120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "PASTE_YOUR_DISCORD_WEBHOOK_URL",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: $json.digest }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "noop",
+      "name": "Nothing New",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        120
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Every 30 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Pull Reddit (r/n8n)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Reddit (r/n8n)": {
+      "main": [
+        [
+          {
+            "node": "Pull Forum (Discourse)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Forum (Discourse)": {
+      "main": [
+        [
+          {
+            "node": "Match & Dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match & Dedupe": {
+      "main": [
+        [
+          {
+            "node": "Build Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Digest": {
+      "main": [
+        [
+          {
+            "node": "New Matches?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Matches?": {
+      "main": [
+        [
+          {
+            "node": "Ping Me 📬",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nothing New",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Harare"
+  },
+  "pinData": {}
+}

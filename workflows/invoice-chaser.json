@@ -1,0 +1,247 @@
+{
+  "name": "PRODUCT: Invoice Chaser",
+  "nodes": [
+    {
+      "id": "c-sticky",
+      "name": "📌 What it does (this is a PRODUCT you sell)\n\nReads a client's invoice sheet daily → finds overdue rows → AI writes a reminder whose tone escalates with age (gentle → firm → final notice) → emails it → logs it.\n\nSetup: Google Sheet with tabs `Invoices` (client_name, client_email, invoice_number, amount, currency, due_date, status) and `Log`. Paste the sheet ID. Attach Gmail OAuth credential (or swap for SMTP).",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -260
+      ],
+      "parameters": {
+        "height": 380,
+        "width": 380,
+        "color": 6
+      }
+    },
+    {
+      "id": "c-trigger",
+      "name": "Daily 8am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c-read",
+      "name": "Read Invoices",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "PASTE_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Invoices",
+          "mode": "name"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c-overdue",
+      "name": "Find Overdue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const out = [];\nfor (const item of items) {\n  const r = item.json;\n  if (!r.due_date || String(r.status || '').toLowerCase() === 'paid') continue;\n  const due = new Date(r.due_date);\n  if (isNaN(due.getTime())) continue;\n  const days = Math.floor((Date.now() - due.getTime()) / 86400000);\n  if (days <= 0) continue;\n  const bucket = days <= 7 ? 1 : (days <= 21 ? 2 : 3);\n  out.push({ json: Object.assign({}, r, { days_overdue: days, bucket }) });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "c-openai",
+      "name": "Draft Reminder (OpenAI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer PASTE_YOUR_OPENAI_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.6, max_tokens: 220, messages: [ { role: 'system', content: 'You write polite, professional payment reminder emails for a small business. Tone bucket 1 (1-7 days overdue): friendly nudge. Bucket 2 (8-21 days): firmer, ask for a payment date. Bucket 3 (22+ days): final notice, mention late fees or pausing work. Always include invoice number, amount and days overdue. Sign off as the business owner. Max 120 words. Plain text.' }, { role: 'user', content: JSON.stringify({ client: $json.client_name, invoice_number: $json.invoice_number, amount: ($json.currency || 'USD') + ' ' + $json.amount, days_overdue: $json.days_overdue, tone_bucket: $json.bucket }) } ] }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "c-build",
+      "name": "Build Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const src = $json;\nlet body = '';\ntry { body = $json.choices[0].message.content.trim(); } catch (e) {}\nif (!body) body = 'Hi ' + (src.client_name || 'there') + ',\\n\\nJust a friendly reminder that invoice ' + src.invoice_number + ' for ' + (src.currency || 'USD') + ' ' + src.amount + ' is now ' + src.days_overdue + ' days overdue. Could you let me know when payment will be made?\\n\\nMany thanks!';\nreturn { json: Object.assign({}, src, {\n  subject: 'Reminder: Invoice ' + src.invoice_number + (src.bucket === 3 ? ' - final notice' : ''),\n  body, sent_at: new Date().toISOString(),\n}) };"
+      }
+    },
+    {
+      "id": "c-send",
+      "name": "Send Reminder",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "fromEmail": "ACCOUNTS@YOURDOMAIN.COM",
+        "sendTo": "={{ $('Find Overdue').item.json.client_email }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "c-log",
+      "name": "Log Reminder",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "PASTE_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Daily 8am": {
+      "main": [
+        [
+          {
+            "node": "Read Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Invoices": {
+      "main": [
+        [
+          {
+            "node": "Find Overdue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Overdue": {
+      "main": [
+        [
+          {
+            "node": "Draft Reminder (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Reminder (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Build Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email": {
+      "main": [
+        [
+          {
+            "node": "Send Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reminder": {
+      "main": [
+        [
+          {
+            "node": "Log Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Harare"
+  },
+  "pinData": {}
+}
