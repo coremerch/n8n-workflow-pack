@@ -163,7 +163,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "PASTE_YOUR_DISCORD_WEBHOOK_URL",
+        "url": "https://discord.com/api/webhooks/1501164755212042311/egQX1KNdCHd1U02TJ1RK8ro2Zyq1hOsxZgnrivR850Rx0DoBDQmpFru_c1iZRcg6tP44",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ content: $json.digest }) }}",
