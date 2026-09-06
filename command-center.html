@@ -3,325 +3,488 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>INBOUND RADAR // COMMAND CENTER</title>
+<title>INBOUND RADAR — TACTICAL HUD // COMMAND CENTER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
+@import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap");
 :root{
-  --hud:#20e2e8; --hud-b:#b4f7f9; --hud-m:#0fb3c2; --hud-d:#0d7f8c; --hud-f:#0a4b55;
-  --ink:#030a10; --ink2:#051019; --amber:#ffd23f; --red:#ff5c5c; --grn:#3dffa0;
-  --fm:"Share Tech Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --fd:"Rajdhani","Share Tech Mono",ui-sans-serif,sans-serif;
+  --font-tech:"Share Tech Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --font-disp:"Rajdhani","Share Tech Mono",sans-serif;
+  --hud:#20e2e8; --hud-bright:#b4f7f9; --hud-mid:#0fb3c2; --hud-dim:#0d7f8c; --hud-faint:#0a4b55;
+  --ink:#030a10; --ink-2:#051019; --amber-hud:#ffd23f; --red-hud:#ff5c5c; --grn:#3dffa0;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{background:var(--ink);color:var(--hud);font-family:var(--fm);font-size:12px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-a{color:var(--hud-b);text-decoration:none}
+html,body,#root{height:100%}
+body{
+  background:var(--ink);overflow:hidden;
+  font-family:var(--font-tech);color:var(--hud);-webkit-font-smoothing:antialiased;
+  display:grid;grid-template-rows:auto 1fr auto;
+}
+a{color:var(--hud-bright);text-decoration:none}
 a:hover{color:#fff;text-shadow:0 0 8px rgba(32,226,232,.8)}
-/* chrome */
-.scan{pointer-events:none;position:fixed;inset:0;z-index:60;background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.22) 2px 3px);mix-blend-mode:multiply}
-.vig{pointer-events:none;position:fixed;inset:0;z-index:61;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
-.beam{pointer-events:none;position:fixed;left:0;right:0;height:90px;z-index:62;background:linear-gradient(180deg,transparent,rgba(32,226,232,.05),transparent);animation:beam 7s linear infinite}
-@keyframes beam{0%{top:-12%}100%{top:112%}}
-.bggrid{position:fixed;inset:0;z-index:-1;background-image:linear-gradient(rgba(32,226,232,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(32,226,232,.05) 1px,transparent 1px);background-size:44px 44px}
-.panel{position:relative;border:1px solid rgba(32,226,232,.35);background:linear-gradient(rgba(32,226,232,.045),rgba(32,226,232,.015)),rgba(4,14,20,.72);box-shadow:inset 0 0 18px rgba(32,226,232,.05),0 0 0 1px rgba(3,10,16,.9);transition:border-color .25s,box-shadow .25s}
-.panel:hover{border-color:rgba(32,226,232,.6);box-shadow:inset 0 0 22px rgba(32,226,232,.09),0 0 12px rgba(32,226,232,.12)}
-.panel::before{content:"";position:absolute;top:-1px;right:-1px;width:8px;height:8px;background:var(--ink);border-left:1px solid rgba(32,226,232,.35);border-bottom:1px solid rgba(32,226,232,.35)}
-.panel::after{content:"";position:absolute;bottom:-1px;left:-1px;width:8px;height:8px;background:var(--ink);border-right:1px solid rgba(32,226,232,.35);border-top:1px solid rgba(32,226,232,.35)}
-.tab{display:flex;align-items:center;justify-content:space-between;height:20px;padding:0 8px;border:1px solid rgba(32,226,232,.45);border-bottom:none;background:linear-gradient(90deg,rgba(32,226,232,.22),rgba(32,226,232,.05));font-size:9px;letter-spacing:.28em;color:var(--hud-b);text-shadow:0 0 6px rgba(32,226,232,.6)}
-.lbl{font-size:8px;letter-spacing:.24em;color:rgba(32,226,232,.65)}
-.glow{text-shadow:0 0 8px rgba(32,226,232,.65),0 0 22px rgba(32,226,232,.3)}
-.chip{display:inline-flex;align-items:center;gap:5px;padding:1px 7px;border:1px solid var(--hud-f);font-size:9px;letter-spacing:.18em}
+/* ══ ══ exact reference chrome ══ ══ */
+.hud-panel{position:relative;border:1px solid rgba(32,226,232,.35);
+  background:linear-gradient(rgba(32,226,232,.045),rgba(32,226,232,.015)),rgba(4,14,20,.72);
+  box-shadow:inset 0 0 18px rgba(32,226,232,.05),0 0 0 1px rgba(3,10,16,.9);
+  transition:border-color .25s ease,box-shadow .25s ease}
+.hud-panel:hover{border-color:rgba(32,226,232,.6);
+  box-shadow:inset 0 0 22px rgba(32,226,232,.09),0 0 12px rgba(32,226,232,.12)}
+.hud-panel::before{content:"";position:absolute;top:-1px;right:-1px;width:8px;height:8px;
+  background:var(--ink);border-left:1px solid rgba(32,226,232,.35);border-bottom:1px solid rgba(32,226,232,.35);pointer-events:none}
+.hud-panel::after{content:"";position:absolute;bottom:-1px;left:-1px;width:8px;height:8px;
+  background:var(--ink);border-right:1px solid rgba(32,226,232,.35);border-top:1px solid rgba(32,226,232,.35);pointer-events:none}
+.hud-tab{display:flex;align-items:center;justify-content:space-between;height:20px;padding:0 6px;
+  border:1px solid rgba(32,226,232,.45);border-bottom:none;
+  background:linear-gradient(90deg,rgba(32,226,232,.22),rgba(32,226,232,.05));
+  font-size:9px;letter-spacing:.28em;color:var(--hud-bright);text-shadow:0 0 6px rgba(32,226,232,.6)}
+.hud-label{font-size:8px;letter-spacing:.24em;color:rgba(32,226,232,.65)}
+.text-glow{text-shadow:0 0 8px rgba(32,226,232,.65),0 0 22px rgba(32,226,232,.3)}
+.chip{display:inline-flex;align-items:center;gap:5px;height:16px;padding:0 7px;border:1px solid var(--hud-faint);font-size:8px;letter-spacing:.2em;color:var(--hud-mid)}
 .chip.ok{border-color:rgba(61,255,160,.5);color:var(--grn)}
-.chip.warn{border-color:rgba(255,210,63,.5);color:var(--amber)}
-.chip.err{border-color:rgba(255,92,92,.5);color:var(--red)}
-.dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
+.chip.warn{border-color:rgba(255,210,63,.5);color:var(--amber-hud)}
+.chip.err{border-color:rgba(255,92,92,.5);color:var(--red-hud)}
+.chip-solid{background:var(--hud);color:#032a30;box-shadow:0 0 10px rgba(32,226,232,.55);border:none}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
+.crt-scanlines{pointer-events:none;position:fixed;inset:0;z-index:60;
+  background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.22) 2px,rgba(0,0,0,.22) 3px);mix-blend-mode:multiply}
+.crt-vignette{pointer-events:none;position:fixed;inset:0;z-index:61;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+.crt-beam{pointer-events:none;position:fixed;left:0;right:0;height:90px;z-index:62;
+  background:linear-gradient(180deg,transparent,rgba(32,226,232,.05),transparent);animation:beam 7s linear infinite}
+@keyframes beam{0%{top:-12%}100%{top:112%}}
+.dots-v{background-image:radial-gradient(circle,rgba(32,226,232,.5) 1px,transparent 1.2px);background-size:2px 7px;background-repeat:repeat-y;width:2px;justify-self:center}
+.dots-h{background-image:radial-gradient(circle,rgba(32,226,232,.5) 1px,transparent 1.2px);background-size:7px 2px;background-repeat:repeat-x;height:2px;margin:0 14px}
+.grid-faint{position:fixed;inset:0;z-index:-1;
+  background-image:linear-gradient(rgba(32,226,232,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(32,226,232,.05) 1px,transparent 1px);background-size:44px 44px}
 @keyframes blink{0%,55%{opacity:1}56%,100%{opacity:.12}}
 .blink{animation:blink 1.1s steps(1) infinite}
-@keyframes flick{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.6}94%{opacity:1}97%{opacity:.75}98%{opacity:1}}
-.flick{animation:flick 6s linear infinite}
-@keyframes ring{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.8);opacity:0}}
-.pulse{position:relative}
-.pulse::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--grn);animation:ring 1.8s ease-out infinite}
-/* layout */
-.wrap{max-width:1380px;margin:0 auto;padding:14px 16px 90px;position:relative;z-index:2}
-header{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid rgba(32,226,232,.4);background:linear-gradient(90deg,rgba(32,226,232,.14),rgba(3,10,16,.7));padding:8px 12px;margin-bottom:12px}
-.brand{font-family:var(--fd);font-weight:700;font-size:19px;letter-spacing:.22em;color:var(--hud-b)}
-.brand small{display:block;font-family:var(--fm);font-weight:400;font-size:8px;letter-spacing:.4em;color:rgba(32,226,232,.6)}
-.clock{font-size:16px;color:var(--hud-b);letter-spacing:.14em}
-.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
-.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c8{grid-column:span 8}.c12{grid-column:span 12}
-@media(max-width:1080px){.c3,.c4,.c5{grid-column:span 6}.c8{grid-column:span 12}}
-@media(max-width:680px){.c3,.c4,.c5,.c6{grid-column:span 12}}
-.inner{padding:10px 12px 12px}
-.big{font-family:var(--fd);font-weight:700;font-size:34px;line-height:1;color:var(--hud-b)}
+.blink-slow{animation:blink 2.3s steps(1) infinite}
+@keyframes flicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.6}94%{opacity:1}97%{opacity:.75}98%{opacity:1}}
+.flicker{animation:flicker 6s linear infinite}
+@keyframes spin-cw{to{transform:rotate(360deg)}}
+@keyframes spin-ccw{to{transform:rotate(-360deg)}}
+.spin-cw{animation:spin-cw var(--spin-dur,20s) linear infinite;transform-origin:center}
+.spin-ccw{animation:spin-ccw var(--spin-dur,20s) linear infinite;transform-origin:center}
+@keyframes pulse-ring{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.8);opacity:0}}
+.pulse-ring{animation:pulse-ring 1.8s ease-out infinite;transform-origin:center}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:#04121a}
+::-webkit-scrollbar-thumb{background:var(--hud-dim)}
+/* ══ layout ══ */
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;height:54px;padding:0 16px;border-bottom:1px solid rgba(32,226,232,.35);background:linear-gradient(180deg,rgba(32,226,232,.10),rgba(3,10,16,.6))}
+.brand{font-family:var(--font-disp);font-weight:700;font-size:21px;letter-spacing:.2em;color:var(--hud-bright);line-height:1}
+.brand small{display:block;font-family:var(--font-tech);font-weight:400;font-size:8px;letter-spacing:.42em;color:rgba(32,226,232,.6);margin-top:3px}
+.hchips{display:flex;gap:8px;align-items:center}
+.clockbox{text-align:right}
+.clock{font-size:20px;letter-spacing:.14em;color:var(--hud-bright);line-height:1}
+main{display:grid;grid-template-columns:302px 2px 1fr 2px 334px;gap:12px;padding:12px 14px;min-height:0}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:hidden}
+.col-center{display:grid;grid-template-rows:1fr 30px;gap:10px;min-height:0}
+/* radar scope */
+.scope-wrap{position:relative;min-height:0}
+.scope-frame{position:absolute;inset:20px 0 6px 0;display:flex;align-items:center;justify-content:center}
+.scope{position:relative;height:100%;aspect-ratio:1/1;max-width:100%;margin:0 auto}
+.scope svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.sweep{position:absolute;inset:6.2%;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(32,226,232,.4),rgba(32,226,232,.14) 34deg,transparent 75deg 360deg);
+  -webkit-mask:radial-gradient(circle,#000 98%,transparent 100%);mask:radial-gradient(circle,#000 98%,transparent 100%)}
+.sweep2{position:absolute;inset:6.2%;border-radius:50%;border:1px dashed rgba(32,226,232,.25)}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--hud);box-shadow:0 0 12px var(--hud)}
+.hub i{position:absolute;inset:-8px;border-radius:50%;border:1px solid var(--hud);display:block;animation:pulse-ring 1.8s ease-out infinite}
+.scope-read{position:absolute;left:50%;top:50%;transform:translate(-50%,26px);white-space:nowrap;text-align:center}
+.blip{position:absolute;width:9px;height:9px;margin:-4.5px;border-radius:50%;cursor:pointer;z-index:5}
+.blip i{position:absolute;inset:-7px;border-radius:50%;border:1px solid currentColor;display:block;animation:pulse-ring 1.8s ease-out infinite}
+.blip b{position:absolute;left:10px;top:-4px;font-weight:400;font-size:8px;letter-spacing:.12em;white-space:nowrap;color:var(--hud-bright);opacity:0;transition:opacity .15s;background:rgba(3,10,16,.9);border:1px solid rgba(32,226,232,.4);padding:2px 6px;pointer-events:none}
+.blip:hover b{opacity:1}
+.scope-head{position:absolute;top:0;left:0;right:0}
+/* ticker */
+.ticker{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;border:1px solid rgba(32,226,232,.35);background:rgba(4,14,20,.8);padding:0 8px;height:30px}
+.tk-label{font-size:8px;letter-spacing:.28em;color:var(--amber-hud);white-space:nowrap}
+.tk-scroll{overflow:hidden;white-space:nowrap;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.tk-scroll span{display:inline-block;padding-left:100%;animation:tk 40s linear infinite;font-size:10px;color:var(--hud-mid)}
+.tk-scroll b{color:var(--amber-hud);font-weight:400}
+@keyframes tk{to{transform:translateX(-100%)}}
+/* panels generic */
+.pbody{padding:9px 10px 10px;overflow:hidden}
+.big{font-family:var(--font-disp);font-weight:700;font-size:36px;line-height:1;color:var(--hud-bright)}
 .big small{font-size:12px;letter-spacing:.2em;color:rgba(32,226,232,.6)}
-.kv{display:flex;justify-content:space-between;border-bottom:1px dotted rgba(32,226,232,.18);padding:4px 0}
-.kv b{color:var(--hud-b);font-weight:400}
-button{font-family:var(--fm);font-size:10px;letter-spacing:.22em;background:linear-gradient(90deg,rgba(32,226,232,.25),rgba(32,226,232,.06));color:var(--hud-b);border:1px solid var(--hud-m);padding:7px 14px;cursor:pointer;text-transform:uppercase}
+.kv{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dotted rgba(32,226,232,.18);padding:4px 0;font-size:10px}
+.kv b{color:var(--hud-bright);font-weight:400}
+.sr{width:100%;height:3px;background:rgba(32,226,232,.12);position:relative;overflow:hidden;margin:8px 0 6px}
+.sr i{position:absolute;top:0;bottom:0;left:0;background:var(--hud);box-shadow:0 0 8px var(--hud);transition:width .6s}
+button{font-family:var(--font-tech);font-size:9px;letter-spacing:.22em;background:linear-gradient(90deg,rgba(32,226,232,.25),rgba(32,226,232,.06));color:var(--hud-bright);border:1px solid var(--hud-mid);padding:6px 12px;cursor:pointer;text-transform:uppercase}
 button:hover{background:var(--hud);color:#032a30;box-shadow:0 0 12px rgba(32,226,232,.55)}
 button:disabled{opacity:.4;cursor:not-allowed}
-.feed{max-height:284px;overflow-y:auto}
-.hit{display:block;padding:7px 8px;border-bottom:1px dotted rgba(32,226,232,.16)}
-.hit:hover{background:rgba(32,226,232,.06)}
-.hit .t{color:var(--hud-b);display:block;margin:2px 0}
-.hit .m{font-size:9px;color:rgba(32,226,232,.55)}
-.hit .kw{color:var(--amber)}
-.asset{display:block;padding:9px 10px;border:1px solid rgba(32,226,232,.2);margin-bottom:8px}
-.asset:hover{border-color:var(--hud-m);background:rgba(32,226,232,.05)}
-.asset .n{color:var(--hud-b);font-size:12px}
-.asset .s{font-size:9px;color:rgba(32,226,232,.55);margin-top:3px;display:flex;gap:12px}
-.copy{cursor:pointer;border:1px dotted var(--hud-d);padding:1px 6px;font-size:9px;color:var(--hud-m)}
-.copy:hover{color:#032a30;background:var(--hud)}
-pre.code{background:rgba(3,10,16,.8);border:1px solid rgba(32,226,232,.2);padding:8px;font-size:10px;overflow-x:auto;color:#9adfe3;position:relative}
-label.ck{display:flex;gap:8px;align-items:flex-start;padding:4px 0;cursor:pointer}
+.asset{display:block;padding:7px 9px;border:1px solid rgba(32,226,232,.2);margin-bottom:7px}
+.asset:hover{border-color:var(--hud-mid);background:rgba(32,226,232,.05)}
+.asset .n{color:var(--hud-bright);font-size:11px}
+.asset .s{font-size:8px;color:rgba(32,226,232,.55);margin-top:3px;display:flex;gap:10px;letter-spacing:.08em}
+label.ck{display:flex;gap:8px;align-items:flex-start;padding:3px 0;cursor:pointer;font-size:9px}
 input[type=checkbox]{accent-color:#20e2e8;margin-top:2px}
-.fmap{width:100%;height:auto;display:block}
-.node{fill:rgba(4,14,20,.85);stroke:var(--hud-d)}
-.ntxt{fill:var(--hud-b);font-family:var(--fm);font-size:9px;letter-spacing:.1em}
-.edge{stroke:var(--hud-d);stroke-width:1;fill:none;stroke-dasharray:4 3;animation:dash 1.2s linear infinite}
-@keyframes dash{to{stroke-dashoffset:-7}}
-footer{margin-top:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(32,226,232,.2);padding-top:8px;font-size:9px;letter-spacing:.18em;color:rgba(32,226,232,.5)}
-#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:70;background:rgba(4,14,20,.95);border:1px solid var(--hud-m);color:var(--hud-b);padding:8px 18px;font-size:10px;letter-spacing:.2em;display:none}
-.sr{width:100%;height:3px;background:rgba(32,226,232,.12);position:relative;overflow:hidden}
-.sr i{position:absolute;top:0;bottom:0;left:0;background:var(--hud);box-shadow:0 0 8px var(--hud);transition:width .6s}
-::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:#04121a}::-webkit-scrollbar-thumb{background:var(--hud-d)}
+.copy{cursor:pointer;border:1px dotted var(--hud-dim);padding:1px 6px;font-size:8px;color:var(--hud-mid);letter-spacing:.14em}
+.copy:hover{color:#032a30;background:var(--hud)}
+pre.code{background:rgba(3,10,16,.85);border:1px solid rgba(32,226,232,.2);padding:6px;font-size:9px;overflow-x:auto;color:#9adfe3;margin:3px 0 8px}
+/* footer */
+footer{display:grid;grid-template-columns:1.2fr 1.4fr 1fr;gap:12px;padding:0 14px 12px;height:172px;min-height:0}
+.fbody{padding:8px 10px;overflow:hidden;font-size:9px}
+.feedrow{display:block;padding:5px 6px;border-bottom:1px dotted rgba(32,226,232,.14);overflow:hidden}
+.feedrow .t{color:var(--hud-bright);display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.feedrow .m{font-size:8px;color:rgba(32,226,232,.55)}
+.feedrow .kw{color:var(--amber-hud)}
+/* modal feed */
+#feedmodal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:rgba(3,10,16,.82)}
+#feedmodal .box{width:min(760px,92vw);max-height:78vh;display:flex;flex-direction:column}
+#feedmodal .list{overflow-y:auto}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:90;background:rgba(4,14,20,.95);border:1px solid var(--hud-mid);color:var(--hud-bright);padding:8px 18px;font-size:10px;letter-spacing:.2em;display:none}
+.led{width:10px;height:10px;border-radius:50%;background:var(--grn);box-shadow:0 0 10px var(--grn)}
+@media(max-width:1060px){
+  body{overflow:auto;display:block}
+  main{display:flex;flex-direction:column}
+  .dots-v{display:none}
+  footer{display:flex;flex-direction:column;height:auto}
+  .scope-frame{position:relative;inset:auto;padding:18px 0 6px}
+  .scope{width:min(88vw,420px)}
+}
 </style>
 </head>
 <body>
-<div class="bggrid"></div><div class="scan"></div><div class="vig"></div><div class="beam"></div>
-<div class="wrap">
+<div class="grid-faint"></div>
+<div class="crt-scanlines"></div><div class="crt-vignette"></div><div class="crt-beam"></div>
 
-<header class="flick">
-  <div class="brand">INBOUND RADAR<span class="blink" style="color:var(--grn)"> ▮</span><small>COMMAND CENTER · v2.0 · CC0 COMMONS OPS</small></div>
-  <div style="text-align:right">
-    <div class="clock glow" id="clock">--:--:--</div>
-    <div class="lbl">UTC · <span id="nextcron">--</span> TO NEXT CYCLE</div>
+<header class="flicker">
+  <div class="brand">INBOUND RADAR <span class="blink" style="color:var(--grn)">▮</span><small>COMMAND CENTER · TACTICAL HUD · CC0 COMMONS OPS</small></div>
+  <div class="hchips">
+    <span class="hud-label">CORE</span><span class="chip warn" id="m-core"><span class="dot blink-slow"></span>SNAP</span>
+    <span class="hud-label">FEED</span><span class="chip warn" id="m-feed"><span class="dot blink-slow"></span>SNAP</span>
+    <span class="hud-label">ASSETS</span><span class="chip warn" id="m-ast"><span class="dot blink-slow"></span>SNAP</span>
+    <span class="chip chip-solid blink-slow">AUTONOMOUS</span>
+  </div>
+  <div class="clockbox">
+    <div class="clock text-glow" id="clock">--:--:--</div>
+    <div class="hud-label">UTC · NEXT CYCLE <b id="nextcron" style="color:var(--hud-bright)">--:--</b></div>
   </div>
 </header>
+<div class="dots-h"></div>
 
-<div class="grid">
-
-  <!-- RADAR CORE -->
-  <section class="c4">
-    <div class="tab"><span>RADAR CORE</span><span class="chip" id="core-mode"><span class="dot blink"></span>SNAPSHOT</span></div>
-    <div class="panel inner">
-      <div style="display:flex;justify-content:space-between;align-items:flex-end">
-        <div><div class="lbl">LAST AUTONOMOUS RUN</div><div class="big glow" id="hb">--<small> AGO</small></div></div>
-        <div class="pulse" style="width:14px;height:14px;border-radius:50%;background:var(--grn);box-shadow:0 0 10px var(--grn)" id="hb-led"></div>
+<main>
+  <!-- ══ LEFT ══ -->
+  <section class="col">
+    <div>
+      <div class="hud-tab"><span>RADAR CORE</span><span id="modebadge" style="letter-spacing:.2em">SNAPSHOT</span></div>
+      <div class="hud-panel pbody">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+          <div><div class="hud-label">LAST AUTONOMOUS RUN</div><div class="big text-glow" id="hb">--<small> AGO</small></div></div>
+          <div class="led pulse-ring" id="hb-led" style="animation-duration:1.8s"></div>
+        </div>
+        <div class="sr"><i id="hb-bar" style="width:0%"></i></div>
+        <div class="kv"><span>HEARTBEAT UTC</span><b id="hb-ts">--</b></div>
+        <div class="kv"><span>SCHEDULE</span><b>*/30 * * * *</b></div>
+        <div class="kv"><span>NEXT CYCLE</span><b id="next">--:--</b></div>
+        <div class="kv"><span>TOPICS DEDUPED</span><b id="seen">--</b></div>
+        <div class="kv"><span>DISCORD UPLINK</span><b style="color:var(--grn)">ARMED ✓</b></div>
+        <div class="kv" style="border:none"><span>BACKUP · SUPABASE</span><b id="sbx" style="color:var(--amber-hud)">STANDBY</b></div>
+        <div style="display:flex;gap:8px;margin-top:9px">
+          <button id="runbtn">▶ RUN NOW</button>
+          <button onclick="location.reload()">⟳ REFRESH</button>
+        </div>
+        <div class="hud-label" id="runmsg" style="margin-top:7px;min-height:11px"></div>
       </div>
-      <div class="sr" style="margin:10px 0 8px"><i id="hb-bar" style="width:0%"></i></div>
-      <div class="kv"><span>HEARTBEAT (UTC)</span><b id="hb-ts">--</b></div>
-      <div class="kv"><span>SCHEDULE</span><b>*/30 * * * *</b></div>
-      <div class="kv"><span>NEXT CYCLE IN</span><b id="next">--:--</b></div>
-      <div class="kv"><span>TOPICS DEDUPED</span><b id="seen">--</b></div>
-      <div class="kv"><span>DISCORD UPLINK</span><b id="dsc" style="color:var(--grn)">ARMED ✓</b></div>
-      <div class="kv" style="border:none"><span>BACKUP RADAR (SUPABASE)</span><b id="sbx" style="color:var(--amber)">STANDBY</b></div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button id="runbtn">▶ RUN NOW</button>
-        <button onclick="location.reload()">⟳ REFRESH ALL</button>
+    </div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+      <div class="hud-tab"><span>MONEY LEG ⚡</span><span class="chip ok" style="border:none"><span class="dot"></span>UNGATED</span></div>
+      <div class="hud-panel pbody" style="flex:1;overflow-y:auto">
+        <div class="hud-label">VOLUNTARY ZAPS · COINOS LNURL</div>
+        <div class="kv"><b style="font-size:10px">SharkSkin@coinos.io</b><span class="copy" data-copy="SharkSkin@coinos.io">COPY</span></div>
+        <div class="hud-label" style="margin-top:6px">BOLT12 OFFER · REUSABLE</div>
+        <div class="kv"><b style="font-size:9px;word-break:break-all">lno1pgf4…tspj6v</b><span class="copy" id="b12">COPY</span></div>
+        <div class="hud-label" style="margin-top:8px;padding-top:6px;border-top:1px dotted rgba(32,226,232,.18)">THE FUNNEL</div>
+        <div class="kv"><span>ARTIFACT CLONED</span><b>free · CC0</b></div>
+        <div class="kv"><span>VOLUNTARY ZAP</span><b>⚡ any amount</b></div>
+        <div class="kv"><span>README LAST LINE</span><b>"DM to install"</b></div>
+        <div class="kv"><span>INBOUND GIG</span><b style="color:var(--grn)">$150–500</b></div>
+        <div class="kv" style="border:none"><span>3 RETAINERS ≈</span><b style="color:var(--amber-hud)">$50 / DAY</b></div>
       </div>
-      <div class="lbl" id="runmsg" style="margin-top:8px;min-height:12px"></div>
     </div>
   </section>
 
-  <!-- INTEL FEED -->
-  <section class="c8">
-    <div class="tab"><span>INTEL FEED — QUESTIONS YOU CAN ANSWER</span><span class="chip" id="feed-mode"><span class="dot blink"></span>SNAPSHOT</span></div>
-    <div class="panel inner">
-      <div class="feed" id="feed"></div>
-      <div class="lbl" style="margin-top:8px">PROTOCOL · answer help-first in &lt;1h · drop the CC0 repo link · never pitch · "DM me if you want it installed" does the selling</div>
+  <div class="dots-v"></div>
+
+  <!-- ══ CENTER : SCOPE ══ -->
+  <section class="col-center">
+    <div class="hud-panel" style="position:relative;min-height:0">
+      <div class="hud-tab scope-head"><span>SCOPE — MATCH SIGNALS</span><span id="blipcount" class="chip-solid" style="padding:0 6px;height:14px;display:inline-flex;align-items:center">0 BLIPS</span></div>
+      <div class="scope-frame">
+        <div class="scope">
+          <svg viewBox="0 0 400 400">
+            <g stroke="rgba(32,226,232,.28)" fill="none">
+              <circle cx="200" cy="200" r="188"/><circle cx="200" cy="200" r="146" stroke-opacity=".55"/>
+              <circle cx="200" cy="200" r="104" stroke-opacity=".45"/><circle cx="200" cy="200" r="62" stroke-opacity=".4"/>
+            </g>
+            <g stroke="rgba(32,226,232,.3)">
+              <line x1="200" y1="14" x2="200" y2="386" stroke-dasharray="2 5"/>
+              <line x1="14" y1="200" x2="386" y2="200" stroke-dasharray="2 5"/>
+            </g>
+            <g id="ticks" stroke="rgba(32,226,232,.5)"></g>
+            <g fill="rgba(180,247,249,.75)" font-family="Share Tech Mono" font-size="10" letter-spacing="2">
+              <text x="200" y="8" text-anchor="middle">N</text><text x="396" y="204" text-anchor="start">E</text>
+              <text x="200" y="400" text-anchor="middle">S</text><text x="4" y="204" text-anchor="end">W</text>
+            </g>
+          </svg>
+          <div class="sweep spin-cw" style="--spin-dur:4.6s"></div>
+          <div class="sweep2 spin-ccw" style="--spin-dur:70s"></div>
+          <div class="hub"><i></i></div>
+          <div class="scope-read"><span class="hud-label" id="scoperead">ACQUIRING…</span></div>
+          <div id="blips" style="position:absolute;inset:0"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ticker">
+      <span class="tk-label blink-slow">▲ INTEL TICKER</span>
+      <div class="tk-scroll"><span id="tickercontent">SCANNING FOR SIGNALS…</span></div>
+      <button id="openfeed" style="padding:2px 8px">FEED ⤢</button>
     </div>
   </section>
 
-  <!-- ASSETS -->
-  <section class="c5">
-    <div class="tab"><span>ASSET GRID — LIVE ON THE OPEN WEB</span><span class="chip" id="ast-mode"><span class="dot blink"></span>SNAPSHOT</span></div>
-    <div class="panel inner" id="assets"></div>
-  </section>
+  <div class="dots-v"></div>
 
-  <!-- MONEY LEG -->
-  <section class="c3">
-    <div class="tab"><span>MONEY LEG ⚡</span><span class="chip ok"><span class="dot"></span>UNGA TED</span></div>
-    <div class="panel inner">
-      <div class="lbl">VOLUNTARY ZAPS — COINOS LNURL</div>
-      <div class="kv" style="border:none"><b style="font-size:11px">SharkSkin@coinos.io</b> <span class="copy" data-copy="SharkSkin@coinos.io">COPY</span></div>
-      <div class="lbl" style="margin-top:8px">BOLT12 OFFER (REUSABLE)</div>
-      <div class="kv" style="border:none"><b style="font-size:9px;word-break:break-all">lno1pgf4x6rpw…tspj6v</b> <span class="copy" id="b12">COPY</span></div>
-      <div class="lbl" style="margin-top:10px;border-top:1px dotted rgba(32,226,232,.18);padding-top:8px">THE FUNNEL</div>
-      <div class="kv"><span>ARTIFACT CLONED</span><b>free</b></div>
-      <div class="kv"><span>ZAP (VOLUNTARY)</span><b>⚡ any amount</b></div>
-      <div class="kv"><span>README LAST LINE</span><b>"DM to install"</b></div>
-      <div class="kv"><span>INBOUND GIG</span><b style="color:var(--grn)">$150–500</b></div>
-      <div class="kv" style="border:none"><span>3 RETAINERS ≈</span><b style="color:var(--amber)">$50/DAY</b></div>
+  <!-- ══ RIGHT ══ -->
+  <section class="col">
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+      <div class="hud-tab"><span>ASSET GRID — LIVE</span><span class="chip ok"><span class="dot"></span>PUBLIC</span></div>
+      <div class="hud-panel pbody" id="assets" style="flex:1;overflow-y:auto"></div>
+    </div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+      <div class="hud-tab"><span>🔐 KEY ROTATION — DO IT</span><span class="chip err"><span class="dot blink"></span>EXPOSED</span></div>
+      <div class="hud-panel pbody" id="sec" style="flex:1;overflow-y:auto"></div>
     </div>
   </section>
+</main>
 
-  <!-- SECURITY -->
-  <section class="c4">
-    <div class="tab"><span>🔐 KEY ROTATION — DO IT</span><span class="chip err"><span class="dot blink"></span>EXPOSED IN CHAT</span></div>
-    <div class="panel inner" id="sec"></div>
-  </section>
-
-  <!-- RUNBOOK -->
-  <section class="c4">
-    <div class="tab"><span>RUNBOOK — ONE-LINERS</span><span class="chip ok"><span class="dot"></span>REFERENCE</span></div>
-    <div class="panel inner" style="display:flex;flex-direction:column;gap:8px">
-      <div><div class="lbl">RE-ARM SUPABASE BACKUP RADAR</div><pre class="code">select cron.schedule('radar-fetch','*/30 * * * *','select radar_fetch()');
-select cron.schedule('radar-process','5,35 * * * *','select radar_process()');</pre></div>
-      <div><div class="lbl">REDEPLOY WORKER (after edits)</div><pre class="code">npx wrangler deploy   # in cloudflare-radar/</pre></div>
-      <div><div class="lbl">HEALTH CHECK (any device)</div><pre class="code">open https://inbound-radar.simalidudu.workers.dev/api/status</pre></div>
-      <div><div class="lbl">REPLACE DISCORD WEBHOOK (1 API call)</div><pre class="code">PUT /workers/scripts/inbound-radar/secrets
-{"name":"DISCORD_WEBHOOK","text":"NEW_URL"}</pre></div>
-    </div>
-  </section>
-
-  <!-- INFRA MAP -->
-  <section class="c4">
-    <div class="tab"><span>INFRA MAP — SIGNAL FLOW</span><span class="chip ok"><span class="dot"></span>2 OF 3 LEGS AUTONOMOUS</span></div>
-    <div class="panel inner">
-      <svg class="fmap" viewBox="0 0 320 150">
-        <rect class="node" x="4"  y="10" width="86" height="26"/><text class="ntxt" x="12" y="26">n8n FORUM</text>
-        <rect class="node" x="4"  y="44" width="86" height="26"/><text class="ntxt" x="12" y="60">r/n8n</text>
-        <rect class="node" x="120" y="26" width="88" height="30" stroke="#20e2e8"/><text class="ntxt" x="130" y="45">CF WORKER</text>
-        <rect class="node" x="238" y="6"  width="78" height="24"/><text class="ntxt" x="248" y="21">KV DEDUPE</text>
-        <rect class="node" x="238" y="52" width="78" height="24"/><text class="ntxt" x="250" y="67">DISCORD</text>
-        <rect class="node" x="120" y="92" width="88" height="26" stroke="#0d7f8c" stroke-dasharray="3 2"/><text class="ntxt" x="128" y="108">SUPABASE ✓</text>
-        <rect class="node" x="4"  y="122" width="86" height="24" stroke="#ffd23f"/><text class="ntxt" x="10" y="137">YOU (REPLY)</text>
-        <path class="edge" d="M90 23 L120 36"/><path class="edge" d="M90 57 L120 48"/>
-        <path class="edge" d="M208 36 L238 18"/><path class="edge" d="M208 44 L238 62"/>
-        <path class="edge" d="M120 105 L164 92" stroke-dasharray="2 4"/>
-        <path class="edge" d="M277 76 L277 100 L47 100 L47 122"/>
-        <text class="ntxt" x="228" y="120" fill="#ffd23f">digest → reply</text>
-      </svg>
-      <div class="lbl" style="margin-top:6px">autonomous: scan → dedupe → digest · human: the 15-min reply · standby: supabase failover</div>
-    </div>
-  </section>
-</div>
+<div class="dots-h"></div>
 
 <footer>
-  <span>SNAPSHOT BASE: <span id="snaps"></span></span>
-  <span id="modes">DATA MODES — — </span>
-  <span>⚡ COMMONS · CC0 · NO GATES · github.com/coremerch</span>
+  <div style="display:flex;flex-direction:column;min-height:0">
+    <div class="hud-tab"><span>INFRA FLOW</span><span class="chip ok"><span class="dot"></span>2/3 LEGS AUTONOMOUS</span></div>
+    <div class="hud-panel fbody" style="flex:1">
+      <svg viewBox="0 0 340 118" style="width:100%;height:calc(100% - 2px)">
+        <g fill="rgba(4,14,20,.9)" stroke="#0d7f8c">
+          <rect x="4" y="8" width="74" height="22"/><rect x="4" y="38" width="74" height="22"/>
+          <rect x="132" y="22" width="80" height="26" stroke="#20e2e8"/>
+          <rect x="262" y="4" width="74" height="20"/><rect x="262" y="44" width="74" height="20"/>
+          <rect x="132" y="84" width="80" height="22" stroke-dasharray="3 2"/>
+        </g>
+        <g fill="#b4f7f9" font-family="Share Tech Mono" font-size="8" letter-spacing="1">
+          <text x="12" y="22">n8n FORUM</text><text x="12" y="52">r/n8n</text>
+          <text x="142" y="38">CF WORKER ⚡</text>
+          <text x="270" y="17">KV DEDUPE</text><text x="272" y="57">DISCORD</text>
+          <text x="140" y="98">SUPABASE ⏸</text>
+        </g>
+        <g stroke="#0d7f8c" fill="none" stroke-dasharray="4 3" style="animation:dash 1.2s linear infinite">
+          <path d="M78 19 L132 30"/><path d="M78 49 L132 42"/>
+          <path d="M212 30 L262 14"/><path d="M212 40 L262 54"/>
+          <path d="M172 84 L172 48"/>
+        </g>
+        <g stroke="#ffd23f" fill="none"><path d="M299 64 L299 92 L60 92 L60 108"/></g>
+        <text x="216" y="104" fill="#ffd23f" font-family="Share Tech Mono" font-size="8">digest → YOU REPLY</text>
+        <style>@keyframes dash{to{stroke-dashoffset:-7}}</style>
+      </svg>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;min-height:0">
+    <div class="hud-tab"><span>RUNBOOK — ONE-LINERS</span><span class="chip ok"><span class="dot"></span>REFERENCE</span></div>
+    <div class="hud-panel fbody" style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:2px 12px">
+      <div><span class="hud-label">RE-ARM SUPABASE BACKUP</span>
+        <pre class="code">select cron.schedule('radar-fetch','*/30 * * * *',
+  'select radar_fetch()');</pre></div>
+      <div><span class="hud-label">REDEPLOY WORKER</span>
+        <pre class="code">cd cloudflare-radar/ &amp;&amp; npx wrangler deploy</pre></div>
+      <div><span class="hud-label">HEALTH CHECK</span>
+        <pre class="code">GET /api/status → {"ok":true,"last_run":…}</pre></div>
+      <div><span class="hud-label">SWAP DISCORD WEBHOOK</span>
+        <pre class="code">PUT /scripts/inbound-radar/secrets
+{"name":"DISCORD_WEBHOOK","text":…}</pre></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;min-height:0">
+    <div class="hud-tab"><span>SYSTEM</span><span class="chip" id="sysmode"><span class="dot blink-slow"></span>—</span></div>
+    <div class="hud-panel fbody" style="flex:1">
+      <div class="kv"><span>SNAPSHOT BASE</span><b id="snaps" style="font-size:9px">--</b></div>
+      <div class="kv"><span>BACKUP HITS ARCHIVED</span><b id="sbhits">--</b></div>
+      <div class="kv"><span>WORKER URL</span><b style="font-size:8px"><a href="https://inbound-radar.simalidudu.workers.dev" target="_blank" rel="noopener">inbound-radar.simalidudu…</a></b></div>
+      <div class="kv"><span>DASHBOARD (PAGES)</span><b style="font-size:8px"><a href="https://coremerch.github.io/n8n-workflow-pack/command-center.html" target="_blank" rel="noopener">coremerch.github.io ✓</a></b></div>
+      <div class="kv" style="border:none"><span>ROTATING KEYS NEVER</span><b>STOPS THE RADAR</b></div>
+      <div class="hud-label" style="margin-top:6px">⚡ COMMONS · CC0 · NO GATES · github.com/coremerch</div>
+    </div>
+  </div>
 </footer>
+
+<div id="feedmodal">
+  <div class="box hud-panel">
+    <div class="hud-tab"><span>INTEL FEED — FULL LIST</span><button id="closefeed" style="padding:1px 8px">✕ CLOSE</button></div>
+    <div class="list pbody" id="feedlist"></div>
+  </div>
 </div>
 <div id="toast"></div>
 
 <script>
-/* ── embedded snapshot (offline fallback — captured at build) ── */
-var SNAP = {"built": "2026-09-06T01:07:47Z", "worker": {"script": "inbound-radar", "cron": "*/30 * * * *", "url": "https://inbound-radar.simalidudu.workers.dev", "dedupe_count": 4, "last_run": "2026-09-06T01:00:26Z"}, "intel": [{"id": "f_306497", "source": "n8n forum", "title": "OpenAI \"Message a model\" node fails with \"Missing fileName parameter\" error", "url": "https://community.n8n.io/t/openai-message-a-model-node-fails-with-missing-filename-parameter-error/306497", "matched": "openai", "ts": "2026-09-05T20:54"}, {"id": "f_311220", "source": "n8n forum", "title": "[For Hire] The follow-up that sent twice, or never sent. One cadence audited, $200, paid after you see the proof", "url": "https://community.n8n.io/t/for-hire-the-follow-up-that-sent-twice-or-never-sent-one-cadence-audited-200-paid-after-you-see-the-proof/311220", "matched": "follow-up", "ts": "2026-09-04T21:46"}, {"id": "f_311209", "source": "n8n forum", "title": "[For Hire] Production-readiness sprint for broken order, inventory or invoice workflows - $249 fixed", "url": "https://community.n8n.io/t/for-hire-production-readiness-sprint-for-broken-order-inventory-or-invoice-workflows-249-fixed/311209", "matched": "invoice", "ts": "2026-09-04T20:16"}, {"id": "f_311162", "source": "n8n forum", "title": "Error Trigger workflow not firing in self-hosted n8n 2.36.8 (Production Webhook execution fails)", "url": "https://community.n8n.io/t/error-trigger-workflow-not-firing-in-self-hosted-n8n-2-36-8-production-webhook-execution-fails/311162", "matched": "self-host", "ts": "2026-09-04T20:13"}], "repos": [{"name": "n8n-code-node-stdlib", "stars": 0, "forks": 0, "issues": 0, "pushed": "2026-09-05", "url": "https://github.com/coremerch/n8n-code-node-stdlib"}, {"name": "free-apis-for-automators", "stars": 0, "forks": 0, "issues": 0, "pushed": "2026-09-05", "url": "https://github.com/coremerch/free-apis-for-automators"}, {"name": "n8n-workflow-pack", "stars": 0, "forks": 0, "issues": 0, "pushed": "2026-09-06", "url": "https://github.com/coremerch/n8n-workflow-pack"}], "hf": {"id": "SharkSkin/free-apis-for-automators", "files": [".gitattributes", "README.md", "data/free_apis.csv", "data/free_apis.json"], "url": "https://huggingface.co/datasets/SharkSkin/free-apis-for-automators"}, "supabase": {"cron_jobs": 0, "hits": 4, "delivered": 4, "role": "standby"}};
+var SNAP = {"built": "2026-09-06T01:30:08Z", "worker": {"script": "inbound-radar", "cron": "*/30 * * * *", "url": "https://inbound-radar.simalidudu.workers.dev", "dedupe_count": 4, "last_run": "2026-09-06T01:15:25.442Z"}, "intel": [{"id": "f_306497", "source": "n8n forum", "title": "OpenAI \"Message a model\" node fails with \"Missing fileName parameter\" error", "url": "https://community.n8n.io/t/openai-message-a-model-node-fails-with-missing-filename-parameter-error/306497", "matched": "openai", "ts": "2026-09-06T01:11Z"}, {"id": "f_311220", "source": "n8n forum", "title": "[For Hire] The follow-up that sent twice, or never sent. One cadence audited, $200, paid after you see the proof", "url": "https://community.n8n.io/t/for-hire-the-follow-up-that-sent-twice-or-never-sent-one-cadence-audited-200-paid-after-you-see-the-proof/311220", "matched": "follow-up", "ts": "2026-09-06T01:11Z"}, {"id": "f_311209", "source": "n8n forum", "title": "[For Hire] Production-readiness sprint for broken order, inventory or invoice workflows - $249 fixed", "url": "https://community.n8n.io/t/for-hire-production-readiness-sprint-for-broken-order-inventory-or-invoice-workflows-249-fixed/311209", "matched": "invoice", "ts": "2026-09-06T01:11Z"}, {"id": "f_311162", "source": "n8n forum", "title": "Error Trigger workflow not firing in self-hosted n8n 2.36.8 (Production Webhook execution fails)", "url": "https://community.n8n.io/t/error-trigger-workflow-not-firing-in-self-hosted-n8n-2-36-8-production-webhook-execution-fails/311162", "matched": "self-host", "ts": "2026-09-06T01:11Z"}], "repos": [{"name": "n8n-code-node-stdlib", "stars": 0, "forks": 0, "issues": 0, "pushed": "2026-09-05", "url": "https://github.com/coremerch/n8n-code-node-stdlib"}, {"name": "free-apis-for-automators", "stars": 0, "forks": 0, "issues": 0, "pushed": "2026-09-05", "url": "https://github.com/coremerch/free-apis-for-automators"}, {"name": "n8n-workflow-pack", "stars": 0, "forks": 0, "issues": 0, "pushed": "2026-09-06", "url": "https://github.com/coremerch/n8n-workflow-pack"}], "hf": {"id": "SharkSkin/free-apis-for-automators", "files": [".gitattributes", "README.md", "data/free_apis.csv", "data/free_apis.json"], "url": "https://huggingface.co/datasets/SharkSkin/free-apis-for-automators"}, "supabase": {"cron_jobs": 0, "hits": 4, "delivered": 4, "role": "standby"}};
 var ABS = "https://inbound-radar.simalidudu.workers.dev";
 var BOLT = "lno1pgf4x6rpwf44x6mfdeqxxmmfdehhxtnfdutzzqsjjnllt9hyj7kjjqkdtuvkw05syz2nmyrzt45vyt53k5dytspj6v";
 var $ = function(id){return document.getElementById(id)};
-var MODES = {core:"SNAP",feed:"SNAP",ast:"SNAP"};
+var MODES = {core:"SNAP", feed:"SNAP", ast:"SNAP"};
+
 function toast(m){var t=$("toast");t.textContent=m;t.style.display="block";setTimeout(function(){t.style.display="none"},2600)}
-function modeChip(id,live){$(id).innerHTML='<span class="dot" style="animation:none"></span>'+(live?"LIVE":"SNAPSHOT");
-  $(id).className="chip "+(live?"ok":"warn")}
 function pad(n){return (n<10?"0":"")+n}
-/* clock + countdowns */
+function setMode(k,live){
+  MODES[k]=live?"LIVE":"SNAP";
+  var el=$("m-"+k);
+  el.className="chip "+(live?"ok":"warn");
+  el.innerHTML='<span class="dot" style="animation:none"></span>'+(live?"LIVE":"SNAP");
+  $("sysmode").innerHTML='<span class="dot blink-slow"></span>CORE:'+MODES.core+' · AST:'+MODES.ast;
+}
+
+/* ── ticks on the scope ── */
+(function(){
+  var g=$("ticks"),h="";
+  for(var a=0;a<360;a+=15){
+    var rad=a*Math.PI/180, major=a%45===0;
+    var r1=major?176:182, r2=188;
+    h+='<line x1="'+(200+r1*Math.sin(rad))+'" y1="'+(200-r1*Math.cos(rad))+'" x2="'+(200+r2*Math.sin(rad))+'" y2="'+(200-r2*Math.cos(rad))+'" stroke-width="'+(major?1.4:.7)+'"/>';
+  }
+  g.innerHTML=h;
+})();
+
+/* ── clock + countdown ── */
 setInterval(function(){
-  var d=new Date();$("clock").textContent=pad(d.getUTCHours())+":"+pad(d.getUTCMinutes())+":"+pad(d.getUTCSeconds());
+  var d=new Date();
+  $("clock").textContent=pad(d.getUTCHours())+":"+pad(d.getUTCMinutes())+":"+pad(d.getUTCSeconds());
   var m=d.getUTCMinutes(),s=d.getUTCSeconds();
-  var rem=(m<30?30-m:m+30-m)*60-s; if(m===0&&s===0)rem=1800;
-  $("next").textContent=pad(Math.floor(rem/60))+":"+pad(rem%60);
-  $("nextcron").textContent=pad(Math.floor(rem/60))+":"+pad(rem%60);
+  var rem=(m<30?30-m:60-m)*60-s;
+  var t=pad(Math.floor(rem/60))+":"+pad(rem%60);
+  $("next").textContent=t;$("nextcron").textContent=t;
 },1000);
-/* intel feed */
-function renderFeed(hits){
-  $("feed").innerHTML = hits.length? hits.map(function(h){
-    return '<a class="hit" href="'+h.url+'" target="_blank" rel="noopener"><span class="m">['+h.source+'] '+(h.ts||"")+'</span><span class="t">▸ '+h.title+'</span><span class="m">matched: <span class="kw">'+h.matched+'</span> · open thread ↗</span></a>';
-  }).join("") : '<div class="lbl" style="padding:14px">NO NEW MATCHES — radar is deduped and quiet. Silence = nothing worth your time (yet).</div>';
+
+/* ── heartbeat ── */
+function renderHB(ts){
+  if(!ts||String(ts).indexOf("20")!==0){$("hb").innerHTML="--<small> NO DATA</small>";$("scoperead").textContent="NO HEARTBEAT";return}
+  var then=new Date(ts).getTime(),age=Math.max(0,Math.floor((Date.now()-then)/1000));
+  var txt=age<90?age+"s":(age<5400?Math.floor(age/60)+"m":Math.floor(age/3600)+"h"+Math.floor(age%3600/60)+"m");
+  $("hb").innerHTML=txt+"<small> AGO</small>";
+  $("hb-ts").textContent=String(ts).replace("T"," ").slice(0,19);
+  var stale=age>2100;
+  var led=$("hb-led");led.style.background=led.style.boxShadow=stale?"var(--red-hud)":"var(--grn)";
+  $("hb").style.color=stale?"var(--red-hud)":"var(--hud-bright)";
+  $("hb-bar").style.width=Math.max(4,100-Math.min(100,age/18))+"%";
+  $("scoperead").textContent=stale?"SIGNAL STALE — CHECK WORKER":"TRACKING · LAST FIX "+txt+" AGO";
 }
-/* assets */
+
+/* ── scope blips + ticker + feed ── */
+function renderIntel(hits){
+  hits=hits||[];
+  $("blipcount").textContent=hits.length+" BLIPS";
+  var box=$("blips"),h="";
+  hits.slice(0,12).forEach(function(k,i){
+    var ang=(i*137.5)%360*Math.PI/180;
+    var R=.30+(i%4)*.045;
+    var x=50+R*Math.cos(ang)*100, y=50+R*Math.sin(ang)*100;
+    var money=/hire|\$|for hire|paid/i.test(k.title);
+    h+='<div class="blip" data-url="'+k.url+'" style="left:'+x+'%;top:'+y+'%;color:'+(money?"var(--amber-hud)":"var(--hud)")+';background:currentColor;box-shadow:0 0 8px currentColor"><i></i><b>'+(money?"💰 ":"")+k.title.slice(0,58)+'</b></div>';
+  });
+  box.innerHTML=h;
+  Array.prototype.forEach.call(box.children,function(b){b.onclick=function(){window.open(b.getAttribute("data-url"),"_blank")}});
+  var tk=hits.length?hits.map(function(k){return '['+k.source+'] '+k.title+'  <b>"'+k.matched+'"</b>'}).join("  ///  "):"ALL QUIET — DEDUPE HOLDING · NO NEW SIGNALS";
+  $("tickercontent").innerHTML="◀ "+tk+"  ///  ";
+  $("feedlist").innerHTML=hits.length?hits.map(function(k){
+    return '<a class="feedrow" href="'+k.url+'" target="_blank" rel="noopener"><span class="t">▸ '+k.title+'</span><span class="m">['+k.source+'] '+(k.ts||"")+' · matched: <span class="kw">'+k.matched+'</span></span></a>';
+  }).join(""):'<div class="hud-label" style="padding:12px">NO MATCHES YET — the radar is deduped and quiet.</div>';
+}
+
+/* ── assets ── */
 function renderAssets(repos,hf){
-  $("assets").innerHTML = repos.map(function(r){
-    return '<a class="asset" href="'+r.url+'" target="_blank" rel="noopener"><span class="n">▸ '+r.name+'</span><span class="s"><span>★ '+r.stars+'</span><span>⑂ '+r.forks+'</span><span>pushed '+r.pushed+'</span><span style="color:var(--grn)">PUBLIC ✓</span></span></a>';
-  }).join("") + '<a class="asset" href="'+hf.url+'" target="_blank" rel="noopener"><span class="n">▸ '+hf.id+' <span style="color:var(--amber);font-size:9px">HF DATASET</span></span><span class="s"><span>'+hf.files.length+' files</span><span>CC0</span><span>load_dataset() ✓</span><span style="color:var(--grn)">PUBLIC ✓</span></span></a>';
+  $("assets").innerHTML=repos.map(function(r){
+    return '<a class="asset" href="'+r.url+'" target="_blank" rel="noopener"><span class="n">▸ '+r.name+'</span><span class="s"><span>★ '+r.stars+'</span><span>⑂ '+r.forks+'</span><span>'+r.pushed+'</span><span style="color:var(--grn)">✓</span></span></a>';
+  }).join("")+'<a class="asset" href="'+hf.url+'" target="_blank" rel="noopener"><span class="n">▸ '+hf.id+' <span style="color:var(--amber-hud);font-size:8px">HF</span></span><span class="s"><span>'+(hf.files?hf.files.length:"—")+' files</span><span>CC0</span><span style="color:var(--grn)">✓</span></span></a>';
 }
-/* security checklist (persisted) */
-var KEYS=[["render","Render API key → REVOKE (unused now)"],["github","GitHub PAT → regenerate (pushes done)"],["hf","HF tokens → revoke read + write (dataset live)"],["cf","Cloudflare token → rotate/scope down (worker deployed)"],["discord","Discord webhook → optional recreate (send me new URL)"],["supa","Supabase DB password → rotate (radar reads it from config — update radar_config too)"]];
+
+/* ── security checklist ── */
+var KEYS=[["render","Render API key → REVOKE (unused)"],["github","GitHub PAT → regenerate (pushes done)"],["hf","HF tokens ×2 → revoke (dataset live)"],["cf","Cloudflare tokens ×2 → rotate (worker deployed)"],["discord","Discord webhook → optional recreate"],["supa","Supabase DB password → rotate + update radar_config"]];
 function renderSec(){
   var st=JSON.parse(localStorage.getItem("cc-sec")||"{}");
   $("sec").innerHTML=KEYS.map(function(k){
-    return '<label class="ck"><input type="checkbox" data-k="'+k[0]+'" '+(st[k[0]]?"checked":"")+'><span>'+(st[k[0]]?'<s style="color:rgba(32,226,232,.4)">'+k[1]+"</s>":k[1])+"</span></label>";
-  }).join("")+'<div class="lbl" style="margin-top:8px">rotating any of these never interrupts the running radar (creds needed at deploy-time only)</div>';
+    return '<label class="ck"><input type="checkbox" data-k="'+k[0]+'" '+(st[k[0]]?"checked":"")+'><span>'+(st[k[0]]?'<s style="color:rgba(32,226,232,.4)">'+k[1]+'</s>':k[1])+'</span></label>';
+  }).join("")+'<div class="hud-label" style="margin-top:6px">creds are deploy-time only — rotation never interrupts the radar</div>';
   Array.prototype.forEach.call($("sec").querySelectorAll("input"),function(i){
-    i.onchange=function(){st[i.dataset.k]=i.checked;localStorage.setItem("cc-sec",JSON.stringify(st));renderSec()}
+    i.onchange=function(){st[i.getAttribute("data-k")]=i.checked;localStorage.setItem("cc-sec",JSON.stringify(st));renderSec()};
   });
 }
-/* copy helpers */
+
+/* ── copy ── */
 document.addEventListener("click",function(e){
   if(!e.target.classList.contains("copy"))return;
   var txt=e.target.getAttribute("data-copy")||(e.target.id==="b12"?BOLT:"");
-  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(function(){toast("COPIED ✓")},function(){
-    var t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();try{document.execCommand("copy");toast("COPIED ✓")}catch(x){toast(txt)}document.body.removeChild(t);
-  });
+  function ok(){toast("COPIED ✓")}
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(ok,function(){fallback()})}else fallback();
+  function fallback(){var t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();try{document.execCommand("copy");ok()}catch(x){toast(txt)}document.body.removeChild(t)}
 });
-/* heartbeat rendering */
-function renderHB(ts){
-  if(!ts||ts.indexOf("20")!==0){$("hb").innerHTML="--<small> NO DATA</small>";return}
-  var then=new Date(ts).getTime(), age=Math.max(0,Math.floor((Date.now()-then)/1000));
-  var txt = age<90? age+"s" : (age<5400? Math.floor(age/60)+"m" : Math.floor(age/3600)+"h"+Math.floor(age%3600/60)+"m");
-  $("hb").innerHTML=txt+"<small> AGO</small>";$("hb-ts").textContent=ts.replace("T"," ").slice(0,19);
-  var stale=age>2100;
-  $("hb-led").style.background=$("hb-led").style.boxShadow=stale?"var(--red)":"var(--grn)";
-  $("hb-led").style.color=stale?"var(--red)":"var(--grn)";
-  $("hb").style.color=stale?"var(--red)":"var(--hud-b)";
-  $("hb-bar").style.width=Math.max(4,100-Math.min(100,age/18))+"%";
+
+/* ── modal ── */
+$("openfeed").onclick=function(){$("feedmodal").style.display="flex"};
+$("closefeed").onclick=function(){$("feedmodal").style.display="none"};
+$("feedmodal").onclick=function(e){if(e.target.id==="feedmodal")$("feedmodal").style.display="none"};
+
+/* ── data loading: live → worker, else snapshot ── */
+function applySnapshot(){
+  var w=SNAP.worker||{};
+  $("seen").textContent=w.dedupe_count!=null?w.dedupe_count:"--";
+  renderHB(w.last_run);
+  $("sbx").textContent="STANDBY · "+((SNAP.supabase||{}).hits||0)+" hits";
+  $("sbhits").textContent=(SNAP.supabase||{}).hits||"--";
+  renderIntel(SNAP.intel||[]);
+  renderAssets(SNAP.repos||[],SNAP.hf);
+  $("snaps").textContent=SNAP.built;
 }
-/* status: live → worker, fallback snapshot */
 function loadStatus(){
   var urls=["/api/status",ABS+"/api/status"];
-  function tryAt(i){
-    if(i>=urls.length){ // snapshot mode
-      var w=SNAP.worker||{};$("seen").textContent=w.dedupe_count!=null?w.dedupe_count:"--";
-      renderHB(w.last_run==="pre-heartbeat"?"2026-09-06T01:00:26Z":w.last_run);
-      $("sbx").textContent="STANDBY · "+((SNAP.supabase||{}).hits||0)+" hits archived";
-      renderFeed(SNAP.intel||[]);renderAssets(SNAP.repos||[],SNAP.hf);renderSec();
-      $("snaps").textContent=SNAP.built;
-      $("modes").textContent="MODES — CORE:"+MODES.core+" FEED:"+MODES.feed+" ASSETS:"+MODES.ast;
-      return;
-    }
+  (function tryAt(i){
+    if(i>=urls.length){setMode("core",false);setMode("feed",false);applySnapshot();return}
     fetch(urls[i],{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(s){
-      MODES.core=MODES.feed="LIVE";modeChip("core-mode",true);modeChip("feed-mode",true);
+      setMode("core",true);setMode("feed",true);
       $("seen").textContent=s.seen_count!=null?s.seen_count:"--";
       renderHB(s.last_run);
-      $("sbx").textContent="STANDBY · "+((SNAP.supabase||{}).hits||0)+" hits archived";
-      renderFeed((s.hits&&s.hits.length?s.hits:SNAP.intel)||[]);
-      $("runmsg").textContent="worker reachable ✓ — RUN NOW executes a live scan";
-      finish();
+      renderIntel((s.hits&&s.hits.length?s.hits:SNAP.intel)||[]);
+      $("runmsg").textContent="worker reachable ✓ — RUN NOW = live scan";
     }).catch(function(){tryAt(i+1)});
-  }
-  tryAt(0);
-  /* assets: independent live sources */
-  Promise.all((SNAP.repos||[]).map(function(r){
+  })(0);
+  var repos=SNAP.repos||[];
+  Promise.all(repos.map(function(r){
     return fetch("https://api.github.com/repos/coremerch/"+r.name,{cache:"no-store"}).then(function(x){return x.ok?x.json():null}).catch(function(){return null});
   })).then(function(live){
-    var repos=live.every(function(x){return x===null})?(SNAP.repos||[]):live.map(function(x,i){return x?{name:x.name,stars:x.stargazers_count,forks:x.forks_count,pushed:String(x.pushed_at).slice(0,10),url:x.html_url}:SNAP.repos[i]});
-    MODES.ast=live.every(function(x){return x===null})?"SNAP":"LIVE";modeChip("ast-mode",MODES.ast==="LIVE");
-    fetch("https://huggingface.co/api/datasets/SharkSkin/free-apis-for-automators",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).catch(function(){return null}).then(function(hf){
-      renderAssets(repos, hf&&hf.siblings?{id:hf.id,files:hf.siblings,url:"https://huggingface.co/datasets/"+hf.id}:SNAP.hf);
-      $("snaps").textContent=SNAP.built;
-      $("modes").textContent="MODES — CORE:"+MODES.core+" FEED:"+MODES.feed+" ASSETS:"+MODES.ast;
-    });
+    var allDead=live.every(function(x){return x===null});
+    var out=allDead?repos:live.map(function(x,i){return x?{name:x.name,stars:x.stargazers_count,forks:x.forks_count,pushed:String(x.pushed_at||"").slice(0,10),url:x.html_url}:repos[i]});
+    setMode("ast",!allDead);
+    fetch("https://huggingface.co/api/datasets/SharkSkin/free-apis-for-automators",{cache:"no-store"})
+      .then(function(r){return r.ok?r.json():null}).catch(function(){return null})
+      .then(function(hf){
+        renderAssets(out, hf&&hf.siblings?{id:hf.id,files:hf.siblings,url:"https://huggingface.co/datasets/"+hf.id}:SNAP.hf);
+      });
   });
-  function finish(){
-    $("snaps").textContent=SNAP.built;
-    $("modes").textContent="MODES — CORE:"+MODES.core+" FEED:"+MODES.feed+" ASSETS:"+MODES.ast;
-  }
 }
 $("runbtn").onclick=function(){
-  var b=$("runbtn");b.disabled=true;b.textContent="SCANNING…";$("runmsg").textContent="forcing a radar cycle…";
+  var b=$("runbtn");b.disabled=true;b.textContent="SCANNING…";$("runmsg").textContent="forcing radar cycle…";
   var tries=["/run",ABS+"/run"];
-  function go(i){
-    if(i>=tries.length){$("runmsg").textContent="offline preview — open the deployed URL to force runs";b.disabled=false;b.textContent="▶ RUN NOW";return}
+  (function go(i){
+    if(i>=tries.length){$("runmsg").textContent="offline preview — use the deployed URL to force runs";b.disabled=false;b.textContent="▶ RUN NOW";return}
     fetch(tries[i],{method:"POST"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(res){
-      $("runmsg").textContent="scan complete — new matches: "+(res.count!=null?res.count:"?")+(res.delivered?" · digest delivered ⚡":"");
+      $("runmsg").textContent="cycle complete — new matches: "+(res.count!=null?res.count:"?")+(res.delivered?" · digest ⚡":"");
       toast("RADAR CYCLE COMPLETE");loadStatus();b.disabled=false;b.textContent="▶ RUN NOW";
     }).catch(function(){go(i+1)});
-  }
-  go(0);
+  })(0);
 };
+
 renderSec();loadStatus();
-setInterval(loadStatus,120000);
+setInterval(function(){loadStatus()},120000);
 </script>
 </body>
 </html>
