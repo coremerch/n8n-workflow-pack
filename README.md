@@ -2,7 +2,7 @@
 
 **Three production-shaped n8n workflows — plus a zero-infra edition of the Radar that runs *inside* Supabase (no n8n needed).**
 
-> ⚡ **`supabase-radar.sql` is the flagship: the whole Inbound Radar as pure Postgres (`pg_cron` + `pg_net`).** Live-tested 2026-09-06: forum scan 200, Discord digest delivered (204). Paste into the Supabase SQL editor, swap in your webhook URL, done — free tier, no server, no card.
+> ⚡ **`supabase-radar.sql` is the flagship: the whole Inbound Radar as pure Postgres (`pg_cron` + `pg_net`).** Live-tested 2026-09-06: forum scan 200, Discord digest delivered (204). **In production: `cloudflare-radar/` (Worker + KV + cron, deployed via REST API — same engine, adds Reddit, runs every 30 min on Cloudflare's free tier).** Paste into the Supabase SQL editor, swap in your webhook URL, done — free tier, no server, no card.
 
 | Workflow | What it does | The hook |
 |---|---|---|
